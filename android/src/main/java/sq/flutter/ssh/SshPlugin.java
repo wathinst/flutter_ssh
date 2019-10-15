@@ -310,13 +310,28 @@ public class SshPlugin implements MethodCallHandler, StreamHandler {
 
           result.success("shell_started");
 
-          String line;
-          while (client._bufferedReader != null && (line = client._bufferedReader.readLine()) != null) {
-            Map<String, Object> map = new HashMap<>();
-            map.put("name", "Shell");
-            map.put("key", key);
-            map.put("value", line + '\n');
-            sendEvent(map);
+          byte[] tmp=new byte[1024];
+          while(client._bufferedReader != null){
+            while(in.available()>0){
+              int i=in.read(tmp, 0, 1024);
+              if(i<0){
+                break;
+              }
+              String line = new String(tmp, 0, i);
+              Map<String, Object> map = new HashMap<>();
+              map.put("name", "Shell");
+              map.put("key", key);
+              map.put("value", line + '\n');
+              sendEvent(map);
+            }
+            if(channel.isClosed()){
+              break;
+            }
+            try{
+              Thread.sleep(100);
+            } catch(Exception e){
+              e.printStackTrace();
+            }
           }
 
         } catch (Exception error) {
